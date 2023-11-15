@@ -151,7 +151,7 @@ function _print_timer(io::IO, to::TimerOutput, ∑t::Integer, ∑b::Integer, ind
     t2 = accum_data.timesq
     avgt = t/nc
     avgt2 = t2/nc
-    stdt = sqrt(avgt2 - avgt^2)
+    stdt = sqrt((avgt2 - avgt^2)*nc/(nc-1))
 
     name = truncdots(to.name, name_length - indent)
     print(io, " ")
