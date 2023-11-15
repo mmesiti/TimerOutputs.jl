@@ -6,16 +6,22 @@ mutable struct TimeData
     time::Int64
     allocs::Int64
     firstexec::Int64
+    mintime::Int64
+    maxtime::Int64
+    timesq::Int64
 end
-TimeData(ncalls, time, allocs) = TimeData(ncalls, time, allocs, time)
+TimeData(ncalls, time, allocs) = TimeData(ncalls, time, allocs, time,0,0,0)
 Base.copy(td::TimeData) = TimeData(td.ncalls, td.time, td.allocs)
-TimeData() = TimeData(0, 0, 0, time_ns())
+TimeData() = TimeData(0, 0, 0, time_ns(),0,0,0)
 
 function Base.:+(self::TimeData, other::TimeData)
     TimeData(self.ncalls + other.ncalls,
              self.time + other.time,
              self.allocs + other.allocs,
-             min(self.firstexec, other.firstexec))
+             min(self.firstexec, other.firstexec),
+             min(self.mintime,other.mintime),
+             max(self.maxtime,other.maxtime),
+             self.timesq + other.timesq)
 end
 
 ###############
@@ -279,9 +285,13 @@ function timer_expr_func(m::Module, is_debug::Bool, to, expr::Expr, label=nothin
 end
 
 function do_accumulate!(accumulated_data, t₀, b₀)
-    accumulated_data.time += time_ns() - t₀
+    now = time_ns()
+    accumulated_data.time += now - t₀
     accumulated_data.allocs += gc_bytes() - b₀
     accumulated_data.ncalls += 1
+    accumulated_data.mintime = min(accumulated_data.mintime, now-t₀)
+    accumulated_data.maxtime = max(accumulated_data.maxtime, now-t₀)
+    accumulated_data.timesq += (now-t₀)^2
 end
 
 

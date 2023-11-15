@@ -70,7 +70,12 @@ function print_header(io, Δt, Δb, ∑t, ∑b, name_length, header, allocations
     midrule       = linechars == :unicode ? "─" : "-"
     topbottomrule = linechars == :unicode ? "─" : "-"
     sec_ncalls = string(rpad("Section", name_length, " "), " ncalls  ")
-    time_headers = "   time    %tot" * (compact ? "" : "     avg")
+    time_headers = ("   time    %tot" *
+                    (compact ? "" : "     avg") *
+                    (compact ? "" : "     min") *
+                    (compact ? "" : "     max") *
+                    (compact ? "" : "     std") )
+
     alloc_headers = allocations ? ("  alloc    %tot" * (compact ? "" : "      avg")) : ""
     total_table_width = sum(textwidth.((sec_ncalls, time_headers, alloc_headers))) + 3
 
@@ -90,7 +95,7 @@ function print_header(io, Δt, Δb, ∑t, ∑b, name_length, header, allocations
         if compact
             time_header       = "      Time     "
         else
-            time_header       = "         Time          "
+            time_header       = "                     Time                      "
         end
 
         time_underline = midrule^textwidth(time_header)
@@ -140,16 +145,25 @@ function _print_timer(io::IO, to::TimerOutput, ∑t::Integer, ∑b::Integer, ind
     accum_data = to.accumulated_data
     t = accum_data.time
     b = accum_data.allocs
+    mint = accum_data.mintime
+    maxt = accum_data.maxtime
+    nc = accum_data.ncalls
+    t2 = accum_data.timesq
+    avgt = t/nc
+    avgt2 = t2/nc
+    stdt = sqrt(avgt2 - avgt^2)
 
     name = truncdots(to.name, name_length - indent)
     print(io, " ")
-    nc = accum_data.ncalls
     print(io, " "^indent, rpad(name, name_length + 2 - indent))
     print(io, lpad(prettycount(nc), 5, " "))
 
     print(io, "   ", lpad(prettytime(t),        6, " "))
     print(io, "  ",  lpad(prettypercent(t, ∑t), 5, " "))
     !compact && print(io, "  ",  rpad(prettytime(t / nc), 6, " "))
+    !compact && print(io, "  ",  rpad(prettytime(mint), 6, " "))
+    !compact && print(io, "  ",  rpad(prettytime(maxt), 6, " "))
+    !compact && print(io, "  ",  rpad(prettytime(stdt), 6, " "))
 
     if allocations
     print(io, "   ", rpad(prettymemory(b),      9, " "))
