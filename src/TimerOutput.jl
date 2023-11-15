@@ -8,7 +8,7 @@ mutable struct TimeData
     firstexec::Int64
     mintime::Int64
     maxtime::Int64
-    timesq::Int64
+    timesq::Float64
 end
 TimeData(ncalls, time, allocs) = TimeData(ncalls, time, allocs, time,typemax(Int64),0,0)
 Base.copy(td::TimeData) = TimeData(td.ncalls, td.time, td.allocs)
@@ -286,12 +286,13 @@ end
 
 function do_accumulate!(accumulated_data, t₀, b₀)
     now = time_ns()
-    accumulated_data.time += now - t₀
+    deltat = now - t₀
+    accumulated_data.time += deltat
     accumulated_data.allocs += gc_bytes() - b₀
     accumulated_data.ncalls += 1
-    accumulated_data.mintime = min(accumulated_data.mintime, now-t₀)
-    accumulated_data.maxtime = max(accumulated_data.maxtime, now-t₀)
-    accumulated_data.timesq += (now-t₀)^2
+    accumulated_data.mintime = min(accumulated_data.mintime, deltat)
+    accumulated_data.maxtime = max(accumulated_data.maxtime, deltat)
+    accumulated_data.timesq += Float64(deltat)^2
 end
 
 
