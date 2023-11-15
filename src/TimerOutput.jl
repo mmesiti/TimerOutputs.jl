@@ -10,9 +10,9 @@ mutable struct TimeData
     maxtime::Int64
     timesq::Int64
 end
-TimeData(ncalls, time, allocs) = TimeData(ncalls, time, allocs, time,0,0,0)
+TimeData(ncalls, time, allocs) = TimeData(ncalls, time, allocs, time,typemax(Int64),0,0)
 Base.copy(td::TimeData) = TimeData(td.ncalls, td.time, td.allocs)
-TimeData() = TimeData(0, 0, 0, time_ns(),0,0,0)
+TimeData() = TimeData(0, 0, 0, time_ns(),typemax(Int64),0,0)
 
 function Base.:+(self::TimeData, other::TimeData)
     TimeData(self.ncalls + other.ncalls,
